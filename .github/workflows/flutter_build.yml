@@ -8,7 +8,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # Dosya yüklemek için izin veriyoruz
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -25,13 +25,16 @@ jobs:
       - name: Build APK
         run: flutter build apk --debug
         
+      - name: Rename APK
+        run: mv build/app/outputs/flutter-apk/app-debug.apk build/app/outputs/flutter-apk/BusineesCard.apk
+
       - name: Create or Update Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "build/app/outputs/flutter-apk/app-debug.apk"
+          artifacts: "build/app/outputs/flutter-apk/BusineesCard.apk"
           tag: "latest"
-          name: "En Güncel APK (Otomatik)"
-          body: "Bu sürüm her kod yüklendiğinde otomatik olarak güncellenir. En son özellikleri içerir."
+          name: "En Güncel BusineesCard APK"
+          body: "Bu sürüm otomatik olarak güncellenir. Dosya adı: BusineesCard.apk"
           allowUpdates: true
           removeArtifacts: true
           replacesArtifacts: true

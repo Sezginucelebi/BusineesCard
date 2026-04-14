@@ -5,10 +5,16 @@ import 'ui/screens/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Platformu otomatik tanıyan başlangıç kodu
-  await Firebase.initializeApp(); 
-  
+
+  try {
+    // Firebase'i başlatmayı deniyoruz, 5 saniye içinde cevap alamazsak devam et diyoruz
+    await Firebase.initializeApp().timeout(const Duration(seconds: 5));
+    print("Firebase başarıyla başlatıldı.");
+  } catch (e) {
+    print("Firebase başlatılamadı, ama uygulama açılıyor: $e");
+    // Firebase başlamasa bile uygulamanın çökmesini engellemek için devam ediyoruz
+  }
+
   runApp(const MyApp());
 }
 
