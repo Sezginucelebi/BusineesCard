@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "905324657534",
+    "project_id": "busineescard-368a7",
+    "storage_bucket": "busineescard-368a7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:905324657534:android:7c380aa89e296eaa74112f",
+        "android_client_info": {
+          "package_name": "com.sezgin.busineescard"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "905324657534-kee708rn23hft7b0h0ivrbelc8d9rn9a.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sezgin.busineescard",
+            "certificate_hash": "62761f0b1b35fcf5883b566afb335f1d64f3057d"
+          }
+        },
+        {
+          "client_id": "905324657534-h69inr7ent7i8fmoaf6fdlc9mt57ntbh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDw6X1S9qA53-OyXcZGgtcNRs6OQ-xEnew"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "905324657534-h69inr7ent7i8fmoaf6fdlc9mt57ntbh.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
