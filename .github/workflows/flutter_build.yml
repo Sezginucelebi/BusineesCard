@@ -3,25 +3,36 @@ name: Flutter Build APK
 on:
   push:
     branches: [ "main", "master" ]
-  pull_request:
-    branches: [ "main", "master" ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Dosya yüklemek için izin veriyoruz
+
     steps:
       - uses: actions/checkout@v4
+      
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.x'
           channel: 'stable'
           cache: true
+          
       - name: Install dependencies
         run: flutter pub get
+        
       - name: Build APK
         run: flutter build apk --debug
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+        
+      - name: Create or Update Release
+        uses: ncipollo/release-action@v1
         with:
-          name: flutter-debug-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          artifacts: "build/app/outputs/flutter-apk/app-debug.apk"
+          tag: "latest"
+          name: "En Güncel APK (Otomatik)"
+          body: "Bu sürüm her kod yüklendiğinde otomatik olarak güncellenir. En son özellikleri içerir."
+          allowUpdates: true
+          removeArtifacts: true
+          replacesArtifacts: true
+          token: ${{ secrets.GITHUB_TOKEN }}
