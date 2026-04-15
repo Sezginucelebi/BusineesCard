@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class RegisterView extends StatefulWidget {
   const RegisterView({super.key});
@@ -14,7 +15,67 @@ class _RegisterViewState extends State<RegisterView> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
   final AuthService _authService = AuthService();
+
   bool _isPasswordVisible = false;
+  bool _isLoading = false;
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
+  }
+
+  Future<void> _handleRegister() async {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    final confirmPassword = _confirmPasswordController.text.trim();
+
+    if (name.isEmpty || email.isEmpty || password.isEmpty) {
+      _showError("Lütfen tüm alanları doldurun.");
+      return;
+    }
+
+    if (password != confirmPassword) {
+      _showError("Şifreler birbiriyle uyuşmuyor.");
+      return;
+    }
+
+    if (password.length < 6) {
+      _showError("Şifre en az 6 karakter olmalıdır.");
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      await _authService.registerWithEmail(email, password);
+
+      // Kayıt başarılıysa ismi Firebase profiline ekleyebiliriz (isteğe bağlı)
+      await FirebaseAuth.instance.currentUser?.updateDisplayName(name);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Kayıt başarılı! Giriş yapabilirsiniz."), backgroundColor: Colors.green),
+        );
+        Navigator.pop(context); // Giriş ekranına dön
+      }
+    } on FirebaseAuthException catch (e) {
+      String message = "Bir hata oluştu.";
+      if (e.code == 'email-already-in-use') {
+        message = "Bu e-posta adresi zaten kullanımda.";
+      } else if (e.code == 'invalid-email') {
+        message = "Geçersiz e-posta formatı.";
+      } else if (e.code == 'weak-password') {
+        message = "Şifre çok zayıf.";
+      }
+      _showError(message);
+    } catch (e) {
+      _showError("Kayıt Hatası: $e");
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +85,7 @@ class _RegisterViewState extends State<RegisterView> {
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Color(0xFF2C3E50)),
-        title: const Text("Kayıt Ol", style: TextStyle(color: Color(0xFF2C3E50))),
+        title: const Text("Kayıt Ol", style: TextStyle(color: Color(0xFF2C3E50), fontWeight: FontWeight.bold)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
@@ -44,83 +105,59 @@ class _RegisterViewState extends State<RegisterView> {
             const SizedBox(height: 30),
             Container(
               decoration: BoxDecoration(
+                color: Colors.grey.shade50,
                 border: Border.all(color: Colors.grey.shade300),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
                 children: [
-                  TextField(
-                    controller: _nameController,
-                    decoration: const InputDecoration(
-                      hintText: "Ad Soyad",
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-                    ),
-                  ),
+                  _buildTextField(_nameController, "Ad Soyad", Icons.person, false),
                   const Divider(height: 1, thickness: 1),
-                  TextField(
-                    controller: _emailController,
-                    decoration: const InputDecoration(
-                      hintText: "E-posta Adresi",
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-                    ),
-                    keyboardType: TextInputType.emailAddress,
-                  ),
+                  _buildTextField(_emailController, "E-posta Adresi", Icons.email, false),
                   const Divider(height: 1, thickness: 1),
-                  TextField(
-                    controller: _passwordController,
-                    obscureText: !_isPasswordVisible,
-                    decoration: InputDecoration(
-                      hintText: "Şifre",
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-                      suffixIcon: IconButton(
-                        icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off),
-                        onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
-                      ),
-                    ),
-                  ),
+                  _buildTextField(_passwordController, "Şifre", Icons.lock, true),
                   const Divider(height: 1, thickness: 1),
-                  TextField(
-                    controller: _confirmPasswordController,
-                    obscureText: !_isPasswordVisible,
-                    decoration: const InputDecoration(
-                      hintText: "Şifre Tekrar",
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-                    ),
-                  ),
+                  _buildTextField(_confirmPasswordController, "Şifre Tekrar", Icons.lock_outline, true),
                 ],
               ),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 40),
             SizedBox(
               width: double.infinity,
               height: 55,
               child: ElevatedButton(
-                onPressed: () async {
-                  if (_passwordController.text != _confirmPasswordController.text) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Şifreler uyuşmuyor.")));
-                    return;
-                  }
-                  try {
-                    await _authService.registerWithEmail(_emailController.text, _passwordController.text);
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Kayıt başarılı!")));
-                    Navigator.pop(context);
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Kayıt Hatası: $e")));
-                  }
-                },
+                onPressed: _isLoading ? null : _handleRegister,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2C3E50),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 2,
                 ),
-                child: const Text("Kayıt Ol", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text("KAYIT OL", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String hint, IconData icon, bool isPassword) {
+    return TextField(
+      controller: controller,
+      obscureText: isPassword && !_isPasswordVisible,
+      decoration: InputDecoration(
+        hintText: hint,
+        prefixIcon: Icon(icon, color: Colors.grey, size: 20),
+        border: InputBorder.none,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+        suffixIcon: isPassword
+          ? IconButton(
+              icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off, size: 20),
+              onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+            )
+          : null,
       ),
     );
   }
