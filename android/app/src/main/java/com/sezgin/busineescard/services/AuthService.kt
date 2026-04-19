@@ -9,7 +9,7 @@ enum class SubscriptionLevel {
 }
 
 class AuthService(private val context: Context) {
-    private val auth = FirebaseAuth.instance
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 
     val currentUser: FirebaseUser?
         get() = auth.currentUser
@@ -28,7 +28,7 @@ class AuthService(private val context: Context) {
         }
     }
 
-    suspend fun upgradeSubscription(level: SubscriptionLevel) {
+    fun upgradeSubscription(level: SubscriptionLevel) {
         val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
         prefs.edit().putString("sub_level", level.name).apply()
     }

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
@@ -16,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
 import com.sezgin.busineescard.models.BusinessCard
@@ -23,42 +25,53 @@ import com.sezgin.busineescard.services.DatabaseService
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CardEditorScreen(onBack: () -> Unit) {
+fun CardEditorScreen(userId: String, cardId: String? = null, onBack: () -> Unit) {
     val context = LocalContext.current
     val dbService = remember { DatabaseService(context) }
-    val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+    
+    // Mevcut kartı yükle (eğer düzenleme modundaysak)
+    val existingCard = remember { if (cardId != null) dbService.getCardById(userId, cardId) else null }
 
-    var name by remember { mutableStateOf("") }
-    var title by remember { mutableStateOf("") }
-    var company by remember { mutableStateOf("") }
-    var phone by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var website by remember { mutableStateOf("") }
-    var address by remember { mutableStateOf("") }
-    var selectedColor by remember { mutableStateOf("0xFFE3F2FD") }
+    var name by remember { mutableStateOf(existingCard?.name ?: "") }
+    var title by remember { mutableStateOf(existingCard?.title ?: "") }
+    var company by remember { mutableStateOf(existingCard?.company ?: "") }
+    
+    // Telefonu parçala
+    val savedPhone = existingCard?.phones ?: "+90 "
+    var countryCode by remember { mutableStateOf(savedPhone.split(" ").firstOrNull() ?: "+90") }
+    var phoneNumber by remember { mutableStateOf(if (savedPhone.contains(" ")) savedPhone.split(" ").drop(1).joinToString(" ") else "") }
+    
+    var email by remember { mutableStateOf(existingCard?.email ?: "") }
+    var website by remember { mutableStateOf(existingCard?.website ?: "") }
+    var address by remember { mutableStateOf(existingCard?.address ?: "") }
+    var selectedColor by remember { mutableStateOf(existingCard?.cardColor ?: "0xFFE3F2FD") }
 
     val colors = listOf("0xFFE3F2FD", "0xFFE8F5E9", "0xFFFFF3E0", "0xFFF3E5F5", "0xFFFAFAFA", "0xFF2C2C2C")
+
+    fun saveCard() {
+        if (name.isNotEmpty()) {
+            val fullPhone = "$countryCode $phoneNumber"
+            val cardToSave = BusinessCard(
+                id = existingCard?.id, // ID varsa güncelleme, yoksa yeni kayıt
+                name = name, title = title, company = company,
+                address = address, phones = fullPhone, email = email,
+                website = website, cardColor = selectedColor,
+                fontStyle = "Default", userId = userId
+            )
+            dbService.insertCard(cardToSave)
+            onBack()
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Yeni Kart") },
+                title = { Text(if (cardId == null) "Yeni Kart" else "Kartı Düzenle") },
                 navigationIcon = {
                     IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null) }
                 },
                 actions = {
-                    IconButton(onClick = {
-                        if (name.isNotEmpty()) {
-                            val newCard = BusinessCard(
-                                name = name, title = title, company = company,
-                                address = address, phones = phone, email = email,
-                                website = website, cardColor = selectedColor,
-                                fontStyle = "Default", userId = userId
-                            )
-                            dbService.insertCard(newCard)
-                            onBack()
-                        }
-                    }) {
+                    IconButton(onClick = { saveCard() }) {
                         Icon(Icons.Default.Check, null)
                     }
                 }
@@ -81,9 +94,30 @@ fun CardEditorScreen(onBack: () -> Unit) {
             Text("İletişim Bilgileri", fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
             
-            OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Telefon") }, modifier = Modifier.fillMaxWidth())
+            Row(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = countryCode,
+                    onValueChange = { countryCode = it },
+                    label = { Text("Kod") },
+                    modifier = Modifier.weight(0.3f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                OutlinedTextField(
+                    value = phoneNumber,
+                    onValueChange = { phoneNumber = it },
+                    label = { Text("Telefon Numarası") },
+                    modifier = Modifier.weight(0.7f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+                )
+            }
+            
             Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("E-posta") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("E-posta") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email))
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Adres") }, modifier = Modifier.fillMaxWidth(), minLines = 2)
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(value = website, onValueChange = { website = it }, label = { Text("Web Sitesi") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri))
             
             Spacer(modifier = Modifier.height(16.dp))
             Text("Kart Rengi", fontWeight = FontWeight.Bold)
@@ -107,22 +141,11 @@ fun CardEditorScreen(onBack: () -> Unit) {
             
             Spacer(modifier = Modifier.height(24.dp))
             Button(
-                onClick = {
-                    if (name.isNotEmpty()) {
-                        val newCard = BusinessCard(
-                            name = name, title = title, company = company,
-                            address = address, phones = phone, email = email,
-                            website = website, cardColor = selectedColor,
-                            fontStyle = "Default", userId = userId
-                        )
-                        dbService.insertCard(newCard)
-                        onBack()
-                    }
-                },
+                onClick = { saveCard() },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2C3E50))
             ) {
-                Text("KAYDET")
+                Text(if (cardId == null) "KAYDET" else "GÜNCELLE")
             }
         }
     }

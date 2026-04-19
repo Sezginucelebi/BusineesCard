@@ -38,7 +38,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToRegister: () -> Unit) {
         verticalArrangement = Arrangement.Center
     ) {
         Icon(
-            painter = painterResource(id = android.R.drawable.ic_menu_contact),
+            imageVector = Icons.Default.Person,
             contentDescription = null,
             modifier = Modifier.size(100.dp),
             tint = Color(0xFF2C3E50)
@@ -98,7 +98,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToRegister: () -> Unit) {
             enabled = !isLoading
         ) {
             if (isLoading) {
-                CircularProgressIndicator(color = Color.white, modifier = Modifier.size(24.dp))
+                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
             } else {
                 Text("Giriş Yap", fontSize = 16.sp)
             }
