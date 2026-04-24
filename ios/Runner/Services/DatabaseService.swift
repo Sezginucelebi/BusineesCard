@@ -1,45 +1,42 @@
 import Foundation
-// Bu servis, hem iOS hem de Android (Skip transpile) tarafında yerel veritabanı mantığını yönetir.
-// Gerçek projede SQLite.swift veya benzeri bir kütüphane kullanılır.
 
 class DatabaseService {
     static let shared = DatabaseService()
+    private let defaults = UserDefaults.standard
 
-    private init() {}
-
-    func getCards(for userId: String) async throws -> [BusinessCard] {
-        // Simüle edilmiş veritabanı okuma
-        let savedCardsData = UserDefaults.standard.data(forKey: "cards_\(userId)") ?? Data()
-        if let decodedCards = try? JSONDecoder().decode([BusinessCard].self, from: savedCardsData) {
-            return decodedCards
-        }
-        return []
+    func getCards(userId: String) async throws -> [BusinessCard] {
+        guard let data = defaults.data(forKey: "cards_\(userId)") else { return [] }
+        return try JSONDecoder().decode([BusinessCard].self, from: data)
     }
 
     func insertCard(card: BusinessCard) async throws {
-        var cards = try await getCards(for: card.userId)
-        var newCard = card
-        newCard.id = String(Int.random(in: 1000...9999)) // Basit ID üretimi
-        cards.append(newCard)
-        try saveCards(cards, for: card.userId)
+        var mutableCard = card
+        var cards = try await getCards(userId: card.userId)
+
+        if mutableCard.id == nil {
+            mutableCard.id = UUID().uuidString
+            cards.append(mutableCard)
+        } else {
+            if let index = cards.firstIndex(where: { $0.id == mutableCard.id }) {
+                cards[index] = mutableCard
+            }
+        }
+
+        try saveCards(userId: card.userId, cards: cards)
     }
 
     func updateCard(card: BusinessCard) async throws {
-        var cards = try await getCards(for: card.userId)
-        if let index = cards.firstIndex(where: { $0.id == card.id }) {
-            cards[index] = card
-            try saveCards(cards, for: card.userId)
-        }
+        try await insertCard(card: card)
     }
 
-    func deleteCard(id: String, userId: String) async throws {
-        var cards = try await getCards(for: userId)
-        cards.removeAll(where: { $0.id == id })
-        try saveCards(cards, for: userId)
+    func deleteCard(userId: String, cardId: String) async throws {
+        var cards = try await getCards(userId: userId)
+        cards.removeAll { $0.id == cardId }
+        try saveCards(userId: userId, cards: cards)
     }
 
-    private func saveCards(_ cards: [BusinessCard], for userId: String) throws {
-        let encoded = try JSONEncoder().encode(cards)
-        UserDefaults.standard.set(encoded, forKey: "cards_\(userId)")
+    private func saveCards(userId: String, cards: [BusinessCard]) throws {
+        let data = try JSONEncoder().encode(cards)
+        defaults.set(data, forKey: "cards_\(userId)")
     }
 }

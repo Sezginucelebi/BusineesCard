@@ -1,6 +1,7 @@
 package com.sezgin.busineescard.ui
 
-import androidx.compose.foundation.background
+import android.app.Activity
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -27,19 +28,47 @@ fun CardListScreen(
     onAddCard: () -> Unit,
     onEditCard: (String) -> Unit,
     onViewCard: (String) -> Unit,
+    onMarket: () -> Unit,
     onLogout: () -> Unit
 ) {
     val context = LocalContext.current
     val dbService = remember { DatabaseService(context) }
     var cards by remember { mutableStateOf(dbService.getCards(userId)) }
+    var showExitDialog by remember { mutableStateOf(false) }
+
+    // Geri tuşuna basıldığında çıkış diyaloğunu göster
+    BackHandler {
+        showExitDialog = true
+    }
+
+    if (showExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = { Text("Çıkış") },
+            text = { Text("Uygulamadan çıkmak istiyor musunuz?") },
+            confirmButton = {
+                TextButton(onClick = { (context as? Activity)?.finish() }) {
+                    Text("EVET")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showExitDialog = false }) {
+                    Text("HAYIR")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Kartlarım") },
+                title = { Text("Kartlarım", fontWeight = FontWeight.Bold) },
                 actions = {
+                    IconButton(onClick = onMarket) {
+                        Icon(Icons.Default.ShoppingCart, contentDescription = "Market")
+                    }
                     IconButton(onClick = onLogout) {
-                        Icon(Icons.Default.ExitToApp, contentDescription = "Çıkış")
+                        Icon(Icons.Default.ExitToApp, contentDescription = "Oturumu Kapat")
                     }
                 }
             )
@@ -52,7 +81,11 @@ fun CardListScreen(
     ) { padding ->
         if (cards.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("Henüz kart eklenmemiş", fontSize = 16.sp, color = Color.Gray)
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(imageVector = Icons.Default.AccountBox, contentDescription = null, modifier = Modifier.size(64.dp), tint = Color.LightGray)
+                    Spacer(Modifier.height(16.dp))
+                    Text("Henüz kart eklenmemiş", fontSize = 16.sp, color = Color.Gray)
+                }
             }
         } else {
             LazyColumn(
@@ -81,9 +114,9 @@ fun CardItem(card: BusinessCard, onDelete: () -> Unit, onEdit: () -> Unit, onVie
         modifier = Modifier.fillMaxWidth().clickable { onView() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(android.graphics.Color.parseColor("#" + card.cardColor.removePrefix("0xFF")))
+            containerColor = Color(0xFFF8F9FA) // Liste öğeleri için daha nötr bir renk
         ),
-        elevation = CardDefaults.cardElevation(4.dp)
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Row(
             modifier = Modifier.padding(16.dp).fillMaxWidth(),
@@ -91,16 +124,16 @@ fun CardItem(card: BusinessCard, onDelete: () -> Unit, onEdit: () -> Unit, onVie
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                val textColor = if (card.cardColor == "0xFF2C2C2C") Color.White else Color.Black
-                Text(card.name, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = textColor)
-                Text(card.title, fontSize = 14.sp, color = textColor.copy(alpha = 0.8f))
+                Text(card.name, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2C3E50))
+                Text(card.title, fontSize = 14.sp, color = Color.Gray)
+                Text(card.company, fontSize = 12.sp, color = Color.LightGray)
             }
             Row {
                 IconButton(onClick = onEdit) {
-                    Icon(Icons.Default.Edit, contentDescription = "Düzenle", tint = if (card.cardColor == "0xFF2C2C2C") Color.White else Color.Black)
+                    Icon(Icons.Default.Edit, contentDescription = "Düzenle", tint = Color(0xFF2C3E50))
                 }
                 IconButton(onClick = onDelete) {
-                    Icon(Icons.Default.Delete, contentDescription = "Sil", tint = Color.Red)
+                    Icon(Icons.Default.Delete, contentDescription = "Sil", tint = Color(0xFFD32F2F))
                 }
             }
         }

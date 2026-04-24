@@ -49,6 +49,17 @@ android {
     }
 }
 
+tasks.register<Copy>("renameDebugApk") {
+    dependsOn("assembleDebug")
+    from(layout.buildDirectory.file("outputs/apk/debug/app-debug.apk"))
+    into(layout.buildDirectory.dir("outputs/apk/renamed"))
+    rename { "BusineesCard.apk" }
+}
+
+tasks.register("renamedDebug") {
+    dependsOn("renameDebugApk")
+}
+
 dependencies {
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")

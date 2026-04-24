@@ -52,6 +52,10 @@
         "source": "com.sezgin.busineescard.app-main-59:/mipmap-mdpi/launcher_icon.png"
     },
     {
+        "merged": "com.sezgin.busineescard.app-debug-57:/drawable_card_bg_3.png.flat",
+        "source": "com.sezgin.busineescard.app-main-59:/drawable/card_bg_3.png"
+    },
+    {
         "merged": "com.sezgin.busineescard.app-debug-57:/mipmap-hdpi_ic_launcher.png.flat",
         "source": "com.sezgin.busineescard.app-main-59:/mipmap-hdpi/ic_launcher.png"
     },
@@ -60,8 +64,16 @@
         "source": "com.sezgin.busineescard.app-main-59:/xml/backup_rules.xml"
     },
     {
+        "merged": "com.sezgin.busineescard.app-debug-57:/drawable_card_bg_1.png.flat",
+        "source": "com.sezgin.busineescard.app-main-59:/drawable/card_bg_1.png"
+    },
+    {
         "merged": "com.sezgin.busineescard.app-debug-57:/mipmap-xxxhdpi_launcher_icon.png.flat",
         "source": "com.sezgin.busineescard.app-main-59:/mipmap-xxxhdpi/launcher_icon.png"
+    },
+    {
+        "merged": "com.sezgin.busineescard.app-debug-57:/drawable_card_bg_2.png.flat",
+        "source": "com.sezgin.busineescard.app-main-59:/drawable/card_bg_2.png"
     },
     {
         "merged": "com.sezgin.busineescard.app-debug-57:/mipmap-xxhdpi_launcher_icon.png.flat",
