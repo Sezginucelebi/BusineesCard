@@ -14,3 +14,14 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+
+## Google Wallet setup
+
+Android Wallet entegrasyonu icin su alanlari `android/gradle.properties` icinde doldurun:
+
+- `GOOGLE_WALLET_ISSUER_ID`
+- `GOOGLE_WALLET_ISSUER_EMAIL`
+- `GOOGLE_WALLET_CLASS_SUFFIX`
+- `GOOGLE_WALLET_ISSUER_NAME`
+
+Bu bilgiler Google Wallet Business Console onboarding tamamlandiktan sonra alinabilir.

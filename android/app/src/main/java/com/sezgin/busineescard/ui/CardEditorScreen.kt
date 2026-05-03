@@ -41,13 +41,13 @@ fun CardEditorScreen(userId: String, cardId: String? = null, onBack: () -> Unit)
     var title by remember { mutableStateOf(existingCard?.title ?: "") }
     var company by remember { mutableStateOf(existingCard?.company ?: "") }
     
-    val savedPhone = existingCard?.phones ?: "+90 "
-    var countryCode by remember { mutableStateOf(if (savedPhone.startsWith("+")) savedPhone.split(" ").firstOrNull() ?: "+90" else "+90") }
-    var phoneNumber by remember { mutableStateOf(if (savedPhone.contains(" ")) savedPhone.split(" ").drop(1).joinToString(" ") else savedPhone.removePrefix("+90").trim()) }
+    val savedPhone = splitPhoneNumber(existingCard?.phones.orEmpty())
+    var countryCode by remember { mutableStateOf(savedPhone.first) }
+    var phoneNumber by remember { mutableStateOf(savedPhone.second) }
     
-    val savedPhone2 = existingCard?.phones2 ?: ""
-    var countryCode2 by remember { mutableStateOf(if (savedPhone2.startsWith("+")) savedPhone2.split(" ").firstOrNull() ?: "+90" else "+90") }
-    var phoneNumber2 by remember { mutableStateOf(if (savedPhone2.contains(" ")) savedPhone2.split(" ").drop(1).joinToString(" ") else "") }
+    val savedPhone2 = splitPhoneNumber(existingCard?.phones2.orEmpty())
+    var countryCode2 by remember { mutableStateOf(savedPhone2.first) }
+    var phoneNumber2 by remember { mutableStateOf(savedPhone2.second) }
     
     var isPhones2Visible by remember { mutableStateOf(!existingCard?.phones2.isNullOrEmpty()) }
     
@@ -55,11 +55,14 @@ fun CardEditorScreen(userId: String, cardId: String? = null, onBack: () -> Unit)
     var website by remember { mutableStateOf(existingCard?.website ?: "") }
     var address by remember { mutableStateOf(existingCard?.address ?: "") }
     val templateId = existingCard?.templateId ?: 1
+    val fontStyle = existingCard?.fontStyle ?: "Default"
     val selectedColor = existingCard?.cardColor ?: "0xFFE3F2FD"
 
     // Mockup için dinamik veriler
-    val displayPhone = "$countryCode $phoneNumber"
-    val displayPhone2 = if (isPhones2Visible && phoneNumber2.isNotEmpty()) "$countryCode2 $phoneNumber2" else null
+    val displayPhone = normalizePhoneWithCode(countryCode, phoneNumber)
+    val displayPhone2 = if (isPhones2Visible && phoneNumber2.isNotEmpty()) {
+        normalizePhoneWithCode(countryCode2, phoneNumber2)
+    } else null
 
     // Mockup için QR hazırlığı
     val qrContent = "BEGIN:VCARD\nVERSION:3.0\nN:$name\nORG:$company\nTITLE:$title\nTEL:$displayPhone\n" +
@@ -89,7 +92,8 @@ fun CardEditorScreen(userId: String, cardId: String? = null, onBack: () -> Unit)
                 website = website, 
                 cardColor = selectedColor,
                 templateId = templateId,
-                fontStyle = "Default", userId = userId
+                fontStyle = fontStyle,
+                userId = userId
             )
             dbService.insertCard(cardToSave)
             onBack()
@@ -114,62 +118,18 @@ fun CardEditorScreen(userId: String, cardId: String? = null, onBack: () -> Unit)
         ) {
             // CANLI ÖNİZLEME (MOCKUP)
             Text("Kart Önizleme", fontWeight = FontWeight.Bold, color = Color.Gray, modifier = Modifier.padding(bottom = 8.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1050f / 600f)
-                    .shadow(8.dp, RoundedCornerShape(20.dp))
-                    .clip(RoundedCornerShape(20.dp))
-            ) {
-                val bgResId = when(templateId) {
-                    1 -> R.drawable.card_bg_1
-                    2 -> R.drawable.card_bg_2
-                    else -> R.drawable.card_bg_3
-                }
-                Image(painterResource(bgResId), null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.FillBounds)
-                
-                Box(modifier = Modifier.fillMaxSize().padding(20.dp)) {
-                    val textColor = if (templateId == 2) Color.White else Color(0xFF2C3E50)
-                    
-                    Column(modifier = Modifier.align(Alignment.TopStart)) {
-                        Text(name.uppercase(), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = textColor, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text(title, fontSize = 10.sp, color = textColor.copy(0.8f), maxLines = 1)
-                        Text(company, fontSize = 10.sp, color = textColor.copy(0.8f), maxLines = 1)
-                        
-                        Spacer(modifier = Modifier.weight(1f))
-                        
-                        Column(modifier = Modifier.fillMaxWidth(0.65f)) {
-                            val smallText = textColor.copy(0.7f)
-                            if (address.isNotEmpty()) {
-                                Text(address, fontSize = 8.sp, lineHeight = 10.sp, color = smallText, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                                Spacer(Modifier.height(2.dp))
-                            }
-                            if (email.isNotEmpty()) {
-                                Text(email, fontSize = 8.sp, color = smallText, maxLines = 1)
-                            }
-                            Text("${getFlagEmoji(countryCode)} $displayPhone", fontSize = 8.sp, color = smallText, maxLines = 1)
-                            displayPhone2?.let {
-                                Text("${getFlagEmoji(countryCode2)} $it", fontSize = 8.sp, color = smallText, maxLines = 1)
-                            }
-                        }
-                    }
-                    
-                    if (qrBitmap != null) {
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = Color.White,
-                            modifier = Modifier.size(99.dp).align(Alignment.BottomEnd).shadow(2.dp, RoundedCornerShape(8.dp))
-                        ) {
-                            Image(
-                                bitmap = qrBitmap.asImageBitmap(),
-                                contentDescription = null,
-                                modifier = Modifier.padding(4.dp).fillMaxSize(),
-                                contentScale = ContentScale.Fit
-                            )
-                        }
-                    }
-                }
-            }
+            StandardBusinessCard(
+                name = name,
+                title = title,
+                company = company,
+                address = address,
+                email = email,
+                phone1 = displayPhone,
+                phone2 = displayPhone2,
+                templateId = templateId,
+                fontStyle = fontStyle,
+                qrBitmap = qrBitmap
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
             Text("Bilgileri Düzenle", fontWeight = FontWeight.Bold, color = Color.Gray)
@@ -224,7 +184,7 @@ fun CardEditorScreen(userId: String, cardId: String? = null, onBack: () -> Unit)
                 Spacer(modifier = Modifier.width(8.dp))
                 OutlinedTextField(
                     value = phoneNumber,
-                    onValueChange = { phoneNumber = it },
+                    onValueChange = { phoneNumber = formatPhoneLocal(it) },
                     label = { Text("Telefon") },
                     modifier = Modifier.weight(0.65f),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next)
@@ -246,7 +206,7 @@ fun CardEditorScreen(userId: String, cardId: String? = null, onBack: () -> Unit)
                     Spacer(modifier = Modifier.width(8.dp))
                     OutlinedTextField(
                         value = phoneNumber2,
-                        onValueChange = { phoneNumber2 = it },
+                        onValueChange = { phoneNumber2 = formatPhoneLocal(it) },
                         label = { Text("2. Telefon") },
                         modifier = Modifier.weight(0.65f),
                         trailingIcon = {

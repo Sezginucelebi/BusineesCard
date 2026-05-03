@@ -11,7 +11,18 @@ data class BusinessCard(
     val email: String,
     val website: String,
     val cardColor: String,
-    val templateId: Int = 1, // 1, 2 veya 3
+    val templateId: Int = 1,
     val fontStyle: String,
-    val userId: String
+    val userId: String,
+    // Koordinat özelleştirmeleri
+    val nameX: Float? = null,
+    val nameY: Float? = null,
+    val titleX: Float? = null,
+    val titleY: Float? = null,
+    val companyX: Float? = null,
+    val companyY: Float? = null,
+    val detailsX: Float? = null,
+    val detailsY: Float? = null,
+    val qrX: Float? = null,
+    val qrY: Float? = null
 )

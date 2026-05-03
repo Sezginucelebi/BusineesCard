@@ -1,6 +1,5 @@
 package com.sezgin.busineescard.ui
 
-import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -12,7 +11,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -22,13 +20,10 @@ import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToRegister: () -> Unit) {
-    val context = LocalContext.current
-    val sharedPrefs = remember { context.getSharedPreferences("login_prefs", Context.MODE_PRIVATE) }
-    
-    var email by remember { mutableStateOf(sharedPrefs.getString("remembered_email", "") ?: "") }
+fun RegisterScreen(onRegisterSuccess: () -> Unit, onNavigateToLogin: () -> Unit) {
+    var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var rememberMe by remember { mutableStateOf(sharedPrefs.getBoolean("remember_me", false)) }
+    var confirmPassword by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     
@@ -41,23 +36,14 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToRegister: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Icon(
-            imageVector = Icons.Default.Person,
-            contentDescription = null,
-            modifier = Modifier.size(100.dp),
-            tint = Color(0xFF2C3E50)
-        )
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
         Text(
-            text = "BusineesCard",
-            fontSize = 32.sp,
+            text = "Yeni Hesap Oluştur",
+            fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
             color = Color(0xFF2C3E50)
         )
         
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(32.dp))
         
         OutlinedTextField(
             value = email,
@@ -80,46 +66,40 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToRegister: () -> Unit) {
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
         )
         
-        Row(
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        OutlinedTextField(
+            value = confirmPassword,
+            onValueChange = { confirmPassword = it },
+            label = { Text("Şifre Tekrar") },
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Checkbox(
-                checked = rememberMe,
-                onCheckedChange = { rememberMe = it },
-                colors = CheckboxDefaults.colors(checkedColor = Color(0xFF2C3E50))
-            )
-            Text("Beni Hatırla", fontSize = 14.sp)
-        }
+            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+        )
         
         if (errorMessage != null) {
-            Text(errorMessage!!, color = Color.Red, fontSize = 12.sp)
+            Text(errorMessage!!, color = Color.Red, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
+        
+        Spacer(modifier = Modifier.height(24.dp))
         
         Button(
             onClick = {
-                if (email.isNotEmpty() && password.isNotEmpty()) {
+                if (email.isNotEmpty() && password.isNotEmpty() && password == confirmPassword) {
                     isLoading = true
                     errorMessage = null
-                    auth.signInWithEmailAndPassword(email, password)
+                    auth.createUserWithEmailAndPassword(email, password)
                         .addOnCompleteListener { task ->
                             isLoading = false
                             if (task.isSuccessful) {
-                                if (rememberMe) {
-                                    sharedPrefs.edit()
-                                        .putString("remembered_email", email)
-                                        .putBoolean("remember_me", true)
-                                        .apply()
-                                } else {
-                                    sharedPrefs.edit().clear().apply()
-                                }
-                                onLoginSuccess()
+                                onRegisterSuccess()
                             } else {
-                                errorMessage = task.exception?.localizedMessage ?: "Giriş başarısız"
+                                errorMessage = task.exception?.localizedMessage ?: "Kayıt hatası"
                             }
                         }
+                } else if (password != confirmPassword) {
+                    errorMessage = "Şifreler eşleşmiyor"
                 }
             },
             modifier = Modifier
@@ -131,14 +111,14 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToRegister: () -> Unit) {
             if (isLoading) {
                 CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
             } else {
-                Text("Giriş Yap", fontSize = 16.sp)
+                Text("Kayıt Ol", fontSize = 16.sp)
             }
         }
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        TextButton(onClick = onNavigateToRegister) {
-            Text("Hesabınız yok mu? Kayıt Olun", color = Color(0xFF2C3E50))
+        TextButton(onClick = onNavigateToLogin) {
+            Text("Zaten hesabınız var mı? Giriş Yapın", color = Color(0xFF2C3E50))
         }
     }
 }

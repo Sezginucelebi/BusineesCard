@@ -37,6 +37,13 @@
             {
               "client_id": "905324657534-h69inr7ent7i8fmoaf6fdlc9mt57ntbh.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "905324657534-ocivt1ckfrduvgokgsso8itf6r2t6km8.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.sezgin.busineescard"
+              }
             }
           ]
         }
